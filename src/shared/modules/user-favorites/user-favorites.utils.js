@@ -22,6 +22,8 @@ import {
   compact,
   filter,
   forEach,
+  get,
+  intersectionBy,
   join,
   kebabCase,
   last,
@@ -35,13 +37,14 @@ import {
   addScriptPathPrefix,
   getScriptDisplayName,
   sortAndGroupScriptsByPath
-} from '../../../browser/modules/my-scripts/my-scripts.utils'
+} from '@relate-by-ui/saved-scripts'
 import {
-  BROWSER_FAVORITES_EXPORT_URL,
   BROWSER_FAVOURITES_NAMESPACE,
   LOCAL_STORAGE_NAMESPACE,
-  USE_REST_API
+  SYNC_VERSION_HISTORY_SIZE
 } from './user-favorites.constants'
+import { NAME } from './user-favorites.duck'
+import { getBrowserName } from '../../services/utils'
 
 /**
  * Opens a new window/tab
@@ -145,18 +148,11 @@ export function setUserFavoritesLocalState (value) {
  * Triggers a user favorite export
  */
 export function exportFavorites () {
-  if (USE_REST_API) {
-    // @todo: electron support
-    openNewWindow(BROWSER_FAVORITES_EXPORT_URL)
-    return
-  }
-
   localFavoritesExport()
 }
 
 /**
  * Exports local favorites using JSZip
- * - Attempts to mirror output from userdata-store API /raw equivalent
  */
 export function localFavoritesExport () {
   const localFavorites = tryGetUserFavoritesLocalState()
@@ -165,9 +161,11 @@ export function localFavoritesExport () {
     localFavorites
   )
   const zipArchive = new JSZip()
-  const dirMap = new Map([['/', zipArchive]])
+  const dirMap = new Map([[BROWSER_FAVOURITES_NAMESPACE, zipArchive]])
   const joinPathParts = pathParts =>
-    pathParts.length > 1 ? `/${join(pathParts, '/')}/` : join(pathParts, '/')
+    pathParts.length > 1
+      ? `${BROWSER_FAVOURITES_NAMESPACE}${join(pathParts, '/')}`
+      : `${BROWSER_FAVOURITES_NAMESPACE}${join(pathParts, '/')}`
 
   zipArchive.file('.placeholder', 'forces directory creation')
   forEach(grouped, ([path, favorites]) => {
@@ -176,7 +174,8 @@ export function localFavoritesExport () {
     const folderPath = joinPathParts(pathParts)
     const parentPath =
       joinPathParts(slice(pathParts, 0, pathParts.length - 1)) || '/'
-    const parent = dirMap.get(parentPath) || dirMap.get('/')
+    const parent =
+      dirMap.get(parentPath) || dirMap.get(BROWSER_FAVOURITES_NAMESPACE)
 
     dirMap.set(folderPath, createZipDirAndFiles(parent, folderName, favorites))
   })
@@ -198,4 +197,55 @@ function createZipDirAndFiles (parent, name, favorites) {
   })
 
   return dir
+}
+
+export function getLocalFavoritesFromState (state) {
+  return get(state, [NAME, 'favorites'], [])
+}
+
+export function getAllRemoteFavoritesVersions (state) {
+  return get(state, 'user-favorites', [])
+}
+
+export function getLatestRemoteFavoritesVersionData (state) {
+  return get(state, '["user-favorites"][0].data', [])
+}
+
+export function getNewUserFavoriteSyncHistoryRevision (
+  allVersions,
+  localUserFavorites
+) {
+  return [
+    {
+      client: getBrowserName(),
+      data: localUserFavorites,
+      syncedAt: Date.now()
+    }
+  ].concat(allVersions.slice(0, SYNC_VERSION_HISTORY_SIZE))
+}
+
+export function mergeRemoteAndLocalFavorites (
+  remoteUserFavorites,
+  localUserFavorites
+) {
+  return [
+    ...filter(
+      remoteUserFavorites,
+      ({ id }) => !some(localUserFavorites, local => local.id === id)
+    ),
+    ...localUserFavorites
+  ]
+}
+
+export function statesAreEqual (remoteUserFavorites, localUserFavorites) {
+  const intersect = intersectionBy(
+    remoteUserFavorites,
+    localUserFavorites,
+    'id'
+  )
+
+  return (
+    intersect.length === remoteUserFavorites.length &&
+    remoteUserFavorites.length === localUserFavorites.length
+  )
 }
