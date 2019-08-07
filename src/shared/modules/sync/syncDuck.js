@@ -45,6 +45,7 @@ import {
   UPDATE_GRAPH_STYLE_DATA
 } from 'shared/modules/grass/grassDuck'
 import { CLEAR_LOCALSTORAGE } from 'shared/modules/localstorage/localstorageDuck'
+import { NAME as USER_FAVORITES_NAME } from '../user-favorites/user-favorites.duck'
 
 export const NAME = 'sync'
 export const NAME_CONSENT = 'syncConsent'
@@ -280,7 +281,7 @@ export const clearSyncEpic = (action$, store) =>
     .ofType(CLEAR_SYNC_AND_LOCAL)
     .do(action => {
       setItem('documents', null)
-      setItem('user-favorites', null)
+      setItem(USER_FAVORITES_NAME, null)
       setItem('folders', null)
       setItem('syncConsent', false)
       setItem('grass', null)

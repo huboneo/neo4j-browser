@@ -51,7 +51,7 @@ export function clearOldFavorites () {
   }
 }
 
-export const getEmptyDocumentSyncData = () => {
+export function getEmptyDocumentSyncData () {
   return [
     {
       client: getBrowserName(),
@@ -61,7 +61,7 @@ export const getEmptyDocumentSyncData = () => {
   ]
 }
 
-export const favoritesToLoad = action => {
+export function favoritesToLoad (action) {
   let favoritesFromSync =
     action.obj.syncObj && action.obj.syncObj.documents.length > 0
       ? action.obj.syncObj.documents[0].data || []

@@ -25,12 +25,12 @@ export const NAME = 'folders'
 export const LOAD_FOLDERS = 'folders/LOAD_FOLDERS'
 export const CLEAR_OLD_FOLDERS = 'folders/SYNC_FOLDERS'
 
-export const loadFolders = folders => {
+export function loadFolders (folders) {
   return { type: LOAD_FOLDERS, folders }
 }
 
-export const clearOldFolders = folders => {
-  return { type: CLEAR_OLD_FOLDERS, folders }
+export function clearOldFolders () {
+  return { type: CLEAR_OLD_FOLDERS }
 }
 
 export default function reducer (state = [], action) {
@@ -44,7 +44,7 @@ export default function reducer (state = [], action) {
   }
 }
 
-export const getEmptyFolderSyncData = () => {
+export function getEmptyFolderSyncData () {
   return [
     {
       client: getBrowserName(),
@@ -54,7 +54,7 @@ export const getEmptyFolderSyncData = () => {
   ]
 }
 
-export const foldersToLoad = action => {
+export function foldersToLoad (action) {
   const foldersFromSync =
     action.obj.syncObj &&
     action.obj.syncObj.folders &&

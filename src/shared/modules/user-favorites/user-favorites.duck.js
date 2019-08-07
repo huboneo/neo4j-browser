@@ -15,15 +15,16 @@
  *
  */
 
-import { combineLatest, of, concat } from 'rxjs'
-import { flatMap, map, mapTo } from 'rxjs/operators'
+import { combineLatest } from 'rxjs'
+import { flatMap, map } from 'rxjs/operators'
 import { get as _get, map as _map } from 'lodash-es'
+import { arrayHasItems } from '@relate-by-ui/saved-scripts'
 
 import { APP_START } from '../app/appDuck'
 import * as oldFavorites from '../favorites/favoritesDuck'
 import * as oldFolders from '../favorites/foldersDuck'
 
-import { STATIC_SCRIPTS } from './user-favorites.constants'
+import { STATIC_SCRIPTS, STATE_NAME } from './user-favorites.constants'
 import * as userFavoriteClient from './client'
 
 import {
@@ -33,13 +34,12 @@ import {
   mapOldFavoritesAndFolders,
   mergeRemoteAndLocalFavorites,
   onlyNewFavorites,
-  statesAreEqual,
+  favoritesAreEqual,
   getAllRemoteFavoritesVersions
 } from './user-favorites.utils'
-import { arrayHasItems } from '@relate-by-ui/saved-scripts'
 import { getSync, SET_SYNC_DATA, syncItems } from '../sync/syncDuck'
 
-export const NAME = 'user-favorites'
+export const NAME = STATE_NAME
 
 const SYNC_FAVORITES = `${NAME}/SYNC_FAVORITES`
 const MIGRATE_OLD_FAVORITES = `${NAME}/MIGRATE_OLD_FAVORITES`
@@ -64,15 +64,14 @@ const initialState = {
 }
 
 export default function useFavoritesReducer (state = initialState, action) {
-  switch (action.type) {
-    case SET_FAVORITES:
-      return {
-        ...state,
-        favorites: action.payload
-      }
-    default:
-      return state
+  if (action.type === SET_FAVORITES) {
+    return {
+      ...state,
+      favorites: action.payload
+    }
   }
+
+  return state
 }
 
 const noOp = () => ({
@@ -247,7 +246,7 @@ export const syncUserFavoritesEpic = (action$, store) =>
       const { syncObj } = getSync(store.getState()) || {}
       const remoteFavorites = getLatestRemoteFavoritesVersionData(syncObj)
 
-      if (syncObj && !statesAreEqual(remoteFavorites, payload)) {
+      if (syncObj && !favoritesAreEqual(remoteFavorites, payload)) {
         return syncItems(
           NAME,
           getNewUserFavoriteSyncHistoryRevision(
@@ -273,7 +272,7 @@ export const loadUserFavoritesFromSyncEpic = (action$, store) =>
         localFavorites
       )
 
-      if (statesAreEqual(remoteFavorites, localFavorites)) {
+      if (favoritesAreEqual(remoteFavorites, localFavorites)) {
         return noOp()
       }
 
