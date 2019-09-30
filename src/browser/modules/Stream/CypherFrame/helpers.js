@@ -62,9 +62,7 @@ export function getBodyAndStatusBarMessages (result, maxRows) {
   let updateMessages = bolt.retrieveFormattedUpdateStatistics(result)
   let streamMessage =
     result.records.length > 0
-      ? `started streaming ${
-        result.records.length
-      } records ${resultAvailableAfter} ms and completed ${totalTimeString} ${streamMessageTail}`
+      ? `started streaming ${result.records.length} records ${resultAvailableAfter} ms and completed ${totalTimeString} ${streamMessageTail}`
       : `completed ${totalTimeString} ${streamMessageTail}`
 
   if (updateMessages && updateMessages.length > 0) {
@@ -323,16 +321,19 @@ export function recordToJSONMapper (record) {
 
 /**
  * Recursively converts Neo4j values to plain values, leaving other types untouched
- * @param     {*}     values
+ * @param     {*}         values
+ * @param     {boolean}   addElementType
  * @return    {*}
  */
-function mapNeo4jValuesToPlainValues (values) {
+export function mapNeo4jValuesToPlainValues (values, addElementType = true) {
   if (!isObjectLike(values)) {
     return values
   }
 
   if (Array.isArray(values)) {
-    return map(values, mapNeo4jValuesToPlainValues)
+    return map(values, value =>
+      mapNeo4jValuesToPlainValues(value, addElementType)
+    )
   }
 
   if (isNeo4jValue(values)) {
@@ -342,10 +343,10 @@ function mapNeo4jValuesToPlainValues (values) {
   // could be a Node or Relationship
   const elementType = lowerCase(get(values, 'constructor.name', ''))
 
-  if (includes(['relationship', 'node'], elementType)) {
+  if (addElementType && includes(['relationship', 'node'], elementType)) {
     return {
       elementType,
-      ...mapNeo4jValuesToPlainValues({ ...values })
+      ...mapNeo4jValuesToPlainValues({ ...values }, addElementType)
     }
   }
 
@@ -353,14 +354,14 @@ function mapNeo4jValuesToPlainValues (values) {
     entries(values),
     (agg, [key, value]) => ({
       ...agg,
-      [key]: mapNeo4jValuesToPlainValues(value)
+      [key]: mapNeo4jValuesToPlainValues(value, addElementType)
     }),
     {}
   )
 }
 
 /**
- * Recursively convert Neo4j value to plain value, leaving other types untouched
+ * convert Neo4j value to plain value, leaving other types untouched
  * @param     {*}   value
  * @return    {*}
  */
