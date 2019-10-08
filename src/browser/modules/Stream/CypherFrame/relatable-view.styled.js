@@ -17,7 +17,7 @@
 
 import styled from 'styled-components'
 
-export const RelatableStyleWrapper = styled.table`
+export const RelatableStyleWrapper = styled.div`
   width: 100%;
 
   /* semantic ui specificity... */
