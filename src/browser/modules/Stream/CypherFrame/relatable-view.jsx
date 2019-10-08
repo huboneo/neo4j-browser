@@ -29,17 +29,23 @@ import arrayHasItems from '../../../../shared/utils/array-has-items'
 import ClickableUrls, {
   convertUrlsToHrefTags
 } from '../../../components/clickable-urls'
-import { StyledJsonPre } from '../../../components/DataTables'
 import { StyledStatsBar } from '../styled'
 import Ellipsis from '../../../components/Ellipsis'
+import { RelatableStyleWrapper, StyledJsonPre } from './relatable-view.styled'
 
 export default function RelatableView ({ maxRows, result }) {
   const { records = [] } = result
   const columns = useMemo(() => getColumns(records), [records])
 
-  if (!arrayHasItems(columns)) { return <RelatableBodyMessage result={result} maxRows={maxRows} /> }
+  if (!arrayHasItems(columns)) {
+    return <RelatableBodyMessage result={result} maxRows={maxRows} />
+  }
 
-  return <Relatable columns={columns} data={slice(records, 0, maxRows)} />
+  return (
+    <RelatableStyleWrapper>
+      <Relatable basic columns={columns} data={slice(records, 0, maxRows)} />
+    </RelatableStyleWrapper>
+  )
 }
 
 function getColumns (records) {
