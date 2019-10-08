@@ -18,16 +18,37 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-import React from 'react'
+import React, {useMemo} from 'react'
 import {
-  buildTableData,
   flattenAttributes,
   mapSysInfoRecords
 } from './sysinfo-utils'
-import { SysInfoTableContainer, SysInfoTable } from 'browser-components/Tables'
+import {SysInfoTableContainer} from 'browser-components/Tables'
 import Render from 'browser-components/Render/index'
+import {memoize} from 'lodash-es'
+import SysInfoRelatable from '../../../components/sys-info-relatable'
 
 const jmxPrefix = 'neo4j.metrics:name='
+export const twoColumnFactory = memoize(label => [
+  {
+    Header: label,
+    id: 'label',
+    accessor: 'label',
+    colSpan: 2
+  },
+  {
+    Header: () => null,
+    id: 'value',
+    accessor: 'value',
+    colSpan: 0
+  }
+])
+
+export function toPercentageString (value) {
+  if (!value) return value
+
+  return `${(value * 100).toFixed(2)}%`
+}
 
 export const sysinfoQuery = useDb => `
 // Page cache. Per DBMS.
@@ -84,26 +105,29 @@ export const Sysinfo = ({
   idAllocation,
   transactions
 }) => {
-  const mappedDatabases = databases.map(db => {
-    return {
-      label: db.name,
-      value: db.status
-    }
-  })
+  const mappedDatabases = useMemo(() => databases.map(db => ({
+    label: db.name,
+    value: db.status
+  })), [databases])
+
   return (
     <SysInfoTableContainer>
-      <SysInfoTable key='IDAllocation' header='Id Allocation'>
-        {buildTableData(idAllocation)}
-      </SysInfoTable>
-      <SysInfoTable key='PageCache' header='Page Cache'>
-        {buildTableData(pageCache)}
-      </SysInfoTable>
-      <SysInfoTable key='Transactionss' header='Transactions'>
-        {buildTableData(transactions)}
-      </SysInfoTable>
-      <SysInfoTable key='databases' header='Databases'>
-        {buildTableData(mappedDatabases)}
-      </SysInfoTable>
+      <SysInfoRelatable
+        columns={twoColumnFactory('ID Allocation')}
+        data={idAllocation}
+      />
+      <SysInfoRelatable
+        columns={twoColumnFactory('Transactions')}
+        data={transactions}
+      />
+      <SysInfoRelatable
+        columns={twoColumnFactory('Page Cache')}
+        data={pageCache}
+      />
+      <SysInfoRelatable
+        columns={twoColumnFactory('Databases')}
+        data={mappedDatabases}
+      />
     </SysInfoTableContainer>
   )
 }
@@ -111,7 +135,7 @@ export const Sysinfo = ({
 export const responseHandler = (setState, useDb) =>
   function (res) {
     if (!res || !res.result || !res.result.records) {
-      setState({ success: false })
+      setState({success: false})
       return null
     }
     const intoGroups = res.result.records.reduce((grouped, record) => {
@@ -134,30 +158,28 @@ export const responseHandler = (setState, useDb) =>
     // Page cache
     const cache = flattenAttributes(intoGroups['Page Cache'])
     const pageCache = [
-      { label: 'Flushes', value: cache['neo4j.page_cache.flushes'] },
-      { label: 'Evictions', value: cache['neo4j.page_cache.evictions'] },
+      {label: 'Flushes', value: cache['neo4j.page_cache.flushes']},
+      {label: 'Evictions', value: cache['neo4j.page_cache.evictions']},
       {
         label: 'Eviction Exceptions',
         value: cache['neo4j.page_cache.eviction_exceptions']
       },
       {
         label: 'Hit Ratio',
-        value: cache['neo4j.page_cache.hit_ratio'],
-        mapper: v => `${(v * 100).toFixed(2)}%`,
+        value: toPercentageString(cache['neo4j.page_cache.hit_ratio']),
         optional: true
       },
       {
         label: 'Usage Ratio',
-        value: cache['neo4j.page_cache.usage_ratio'],
-        mapper: v => `${(v * 100).toFixed(2)}%`,
+        value: toPercentageString(cache['neo4j.page_cache.usage_ratio']),
         optional: true
       }
-    ]
+    ].filter(({value, optional}) => !optional || value)
 
     // Primitive count
     const primitive = flattenAttributes(intoGroups['Primitive Count'])
     const idAllocation = [
-      { label: 'Node ID', value: primitive[`neo4j.${useDb}.ids_in_use.node`] },
+      {label: 'Node ID', value: primitive[`neo4j.${useDb}.ids_in_use.node`]},
       {
         label: 'Property ID',
         value: primitive[`neo4j.${useDb}.ids_in_use.property`]
@@ -179,22 +201,22 @@ export const responseHandler = (setState, useDb) =>
         label: 'Last Tx Id',
         value: tx[`neo4j.${useDb}.transaction.last_committed_tx_id`]
       },
-      { label: 'Current', value: tx[`neo4j.${useDb}.transaction.active`] },
+      {label: 'Current', value: tx[`neo4j.${useDb}.transaction.active`]},
       {
         label: 'Peak',
         value: tx[`neo4j.${useDb}.transaction.peak_concurrent`]
       },
-      { label: 'Opened', value: tx[`neo4j.${useDb}.transaction.started`] },
-      { label: 'Committed', value: tx[`neo4j.${useDb}.transaction.committed`] }
+      {label: 'Opened', value: tx[`neo4j.${useDb}.transaction.started`]},
+      {label: 'Committed', value: tx[`neo4j.${useDb}.transaction.committed`]}
     ]
 
-    setState({ pageCache, idAllocation, transactions, success: true })
+    setState({pageCache, idAllocation, transactions, success: true})
   }
 
 export const clusterResponseHandler = setState =>
   function (res) {
     if (!res.success) {
-      setState({ error: 'No causal cluster results', success: false })
+      setState({error: 'No causal cluster results', success: false})
       return
     }
     const mappedResult = mapSysInfoRecords(res.result.records)
@@ -220,5 +242,5 @@ export const clusterResponseHandler = setState =>
         </Render>
       ]
     })
-    setState({ cc: [{ value: mappedTableComponents }], success: true })
+    setState({cc: [{value: mappedTableComponents}], success: true})
   }

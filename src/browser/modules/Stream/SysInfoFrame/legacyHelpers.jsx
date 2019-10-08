@@ -32,6 +32,8 @@ import {
   SysInfoTableEntry
 } from 'browser-components/Tables'
 import { QuestionIcon } from 'browser-components/icons/Icons'
+import {toPercentageString, twoColumnFactory} from './helpers'
+import SysInfoRelatable from '../../../components/sys-info-relatable'
 
 export const sysinfoQuery = () => 'CALL dbms.queryJmx("org.neo4j:*")'
 
@@ -47,18 +49,22 @@ export const Sysinfo = ({
 }) => {
   return (
     <SysInfoTableContainer>
-      <SysInfoTable key='StoreSizes' header='Store Sizes'>
-        {buildTableData(storeSizes)}
-      </SysInfoTable>
-      <SysInfoTable key='IDAllocation' header='ID Allocation'>
-        {buildTableData(idAllocation)}
-      </SysInfoTable>
-      <SysInfoTable key='PageCache' header='Page Cache'>
-        {buildTableData(pageCache)}
-      </SysInfoTable>
-      <SysInfoTable key='Transactionss' header='Transactions'>
-        {buildTableData(transactions)}
-      </SysInfoTable>
+      <SysInfoRelatable
+        columns={twoColumnFactory('Store Sizes')}
+        data={storeSizes}
+      />
+      <SysInfoRelatable
+        columns={twoColumnFactory('ID Allocation')}
+        data={idAllocation}
+      />
+      <SysInfoRelatable
+        columns={twoColumnFactory('Page Cache')}
+        data={pageCache}
+      />
+      <SysInfoRelatable
+        columns={twoColumnFactory('Transactions')}
+        data={transactions}
+      />
       <Render if={isACausalCluster}>
         <SysInfoTable
           key='cc-table'
@@ -78,9 +84,10 @@ export const Sysinfo = ({
         </SysInfoTable>
       </Render>
       <Render if={ha}>
-        <SysInfoTable key='ha-table' header='High Availability'>
-          {buildTableData(ha)}
-        </SysInfoTable>
+        <SysInfoRelatable
+          columns={twoColumnFactory('High Availability')}
+          data={ha}
+        />
       </Render>
       <Render if={haInstances}>
         <SysInfoTable key='cluster-table' header='Cluster' colspan='4'>
@@ -143,17 +150,15 @@ export const responseHandler = setState =>
       { label: 'Bytes Written', value: cache.BytesWritten },
       {
         label: 'Hit Ratio',
-        value: cache.HitRatio,
-        mapper: v => `${(v * 100).toFixed(2)}%`,
+        value: toPercentageString(cache.HitRatio),
         optional: true
       },
       {
         label: 'Usage Ratio',
-        value: cache.UsageRatio,
-        mapper: v => `${(v * 100).toFixed(2)}%`,
+        value: toPercentageString(cache.UsageRatio),
         optional: true
       }
-    ]
+    ].filter(({value, optional}) => !optional || value)
 
     const baseStoreSizes = [
       {

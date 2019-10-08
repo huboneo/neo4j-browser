@@ -50,7 +50,8 @@ const COLUMNS = [
     Header: () => null,
     id: 'key',
     accessor: 'key',
-    Cell: ({ cell }) => <StyledKey>{cell.value}:</StyledKey>
+    Cell: ({ cell }) => <StyledKey>{cell.value}:</StyledKey>,
+    fooBarbaz: true
   },
   {
     Header: () => null,
@@ -113,7 +114,9 @@ function createKernelRows (kernelValues) {
   const data = compact(
     map(entries(kernelValues), ([key, value]) => {
       if (!value) return null
-      if (key === 'storeSize') { return { key: 'Size', value: toHumanReadableBytes(value) } }
+      if (key === 'storeSize') {
+        return { key: 'Size', value: toHumanReadableBytes(value) }
+      }
       if (key === 'edition') return { key: 'Edition', value: upperFirst(value) }
       if (key === 'role') return { key: 'Cluster role', value }
       if (key === 'dbName') return { key: 'Name', value }

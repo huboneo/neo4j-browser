@@ -29,7 +29,7 @@ import {
   StyledTd,
   StyledExpandable
 } from '../styled'
-import { TableStatusbar } from './TableView'
+import { RelatableStatusbar } from './relatable-view'
 
 class ExpandableContent extends Component {
   state = {}
@@ -96,4 +96,4 @@ export class CodeView extends Component {
   }
 }
 
-export const CodeStatusbar = TableStatusbar
+export const CodeStatusbar = RelatableStatusbar

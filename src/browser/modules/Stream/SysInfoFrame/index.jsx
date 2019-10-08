@@ -39,6 +39,7 @@ import {
   StatusbarWrapper
 } from '../AutoRefresh/styled'
 import { NEO4J_BROWSER_USER_ACTION_QUERY } from 'services/bolt/txMetadata'
+
 import { hasMultiDbSupport } from 'shared/modules/features/versionedFeatures'
 import { ErrorsView } from '../CypherFrame/ErrorsView'
 import { getDatabases } from 'shared/modules/dbMeta/dbMetaDuck'
@@ -64,10 +65,10 @@ export class SysInfoFrame extends Component {
     }
     this.helpers = this.props.hasMultiDbSupport ? helpers : legacyHelpers
   }
-
   componentDidMount () {
     this.getSysInfo()
   }
+
   componentDidUpdate (prevProps, prevState) {
     if (prevState.autoRefresh !== this.state.autoRefresh) {
       if (this.state.autoRefresh) {
