@@ -43,7 +43,12 @@ export default function RelatableView ({ maxRows, result }) {
 
   return (
     <RelatableStyleWrapper>
-      <Relatable basic columns={columns} data={slice(records, 0, maxRows)} />
+      <Relatable
+        striped
+        basic
+        columns={columns}
+        data={slice(records, 0, maxRows)}
+      />
     </RelatableStyleWrapper>
   )
 }

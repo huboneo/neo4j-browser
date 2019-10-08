@@ -62,24 +62,15 @@ export const StyledProperty = styled(chip)`
     border-color: #fff;
   }
 `
-export const StyledTable = styled.table``
-export const StyledKey = styled.td`
+
+export const StyledKey = styled.div`
   text-align: right;
-  padding-right: 13px;
-  width: 100px;
-  color: #bcc0c9;
   font-family: ${props => props.theme.primaryFontFamily};
   outline-color: rgb(188, 192, 201);
   text-shadow: rgba(0, 0, 0, 0.4) 0 1px 0;
 `
-export const StyledValue = styled.td`
+export const StyledValue = styled.div`
   font-family: ${props => props.theme.primaryFontFamily};
-`
-
-export const StyledValueUCFirst = styled(StyledValue)`
-  &:first-letter {
-    text-transform: uppercase;
-  }
 `
 
 export const StyledLink = styled.a`
@@ -91,9 +82,9 @@ export const StyledLink = styled.a`
   }
 `
 export const Link = props => {
-  const { children, ...rest } = props
+  const { children, onClick, ...rest } = props
   return (
-    <StyledLink {...rest}>
+    <StyledLink {...rest} onClick={() => onClick(children)}>
       <PlainPlayIcon />
       &nbsp;
       {children}

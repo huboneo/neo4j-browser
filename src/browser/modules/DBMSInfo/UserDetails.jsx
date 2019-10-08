@@ -18,76 +18,88 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-import React, { Component } from 'react'
+import React, { useMemo } from 'react'
+import { withBus } from 'react-suber'
+import { connect } from 'react-redux'
 
-import Render from 'browser-components/Render'
 import {
   DrawerSubHeader,
   DrawerSection,
   DrawerSectionBody
 } from 'browser-components/drawer'
-import { StyledTable, StyledKey, StyledValue, Link } from './styled'
+import { executeCommand } from 'shared/modules/commands/commandsDuck'
+import arrayHasItems from 'shared/utils/array-has-items'
 
-export class UserDetails extends Component {
-  render () {
-    const userDetails = this.props.user
-    if (userDetails.username) {
-      const mappedRoles =
-        userDetails.roles.length > 0 ? userDetails.roles.join(', ') : '-'
-      const hasAdminRole = userDetails.roles
-        .map(role => role.toLowerCase())
-        .includes('admin')
-      return (
-        <DrawerSection className='user-details'>
-          <DrawerSubHeader>Connected as</DrawerSubHeader>
-          <DrawerSectionBody>
-            <StyledTable>
-              <tbody>
-                <tr>
-                  <StyledKey>Username:</StyledKey>
-                  <StyledValue data-testid='user-details-username'>
-                    {userDetails.username}
-                  </StyledValue>
-                </tr>
-                <tr>
-                  <StyledKey>Roles:</StyledKey>
-                  <StyledValue data-testid='user-details-roles'>
-                    {mappedRoles}
-                  </StyledValue>
-                </tr>
-                <Render if={hasAdminRole}>
-                  <tr>
-                    <StyledKey className='user-list-button'>Admin:</StyledKey>
-                    <StyledValue>
-                      <Link
-                        onClick={() =>
-                          this.props.onItemClick(':server user list')
-                        }
-                      >
-                        :server user list
-                      </Link>
-                    </StyledValue>
-                  </tr>
-                  <tr>
-                    <StyledKey className='user-list-button' />
-                    <StyledValue>
-                      <Link
-                        onClick={() =>
-                          this.props.onItemClick(':server user add')
-                        }
-                      >
-                        :server user add
-                      </Link>
-                    </StyledValue>
-                  </tr>
-                </Render>
-              </tbody>
-            </StyledTable>
-          </DrawerSectionBody>
-        </DrawerSection>
-      )
-    } else {
-      return null
+import { StyledKey, StyledValue, Link } from './styled'
+import RelatableHeadless from './relatable-headless'
+
+const COLUMNS = [
+  {
+    Header: () => null,
+    id: 'key',
+    accessor: 'key',
+    Cell: ({ cell }) => (
+      <StyledKey>{cell.value ? `${cell.value}:` : cell.value}</StyledKey>
+    )
+  },
+  {
+    Header: () => null,
+    id: 'value',
+    accessor: 'value',
+    Cell: ({ cell }) => <StyledValue>{cell.value}</StyledValue>
+  }
+]
+
+export function UserDetails ({ user }) {
+  const data = useMemo(() => createUserRows(user), [user.username])
+
+  if (!arrayHasItems(data)) return null
+
+  return (
+    <DrawerSection className='user-details'>
+      <DrawerSubHeader>Connected as</DrawerSubHeader>
+      <DrawerSectionBody>
+        <RelatableHeadless columns={COLUMNS} data={data} />
+      </DrawerSectionBody>
+    </DrawerSection>
+  )
+}
+
+const mapDispatchToProps = (dispatch, ownProps) => {
+  return {
+    onClick: cmd => {
+      const action = executeCommand(cmd)
+      ownProps.bus.send(action.type, action)
     }
   }
+}
+
+const DispatchLink = withBus(
+  connect(
+    null,
+    mapDispatchToProps
+  )(Link)
+)
+
+function createUserRows (userDetails) {
+  if (!userDetails.username) return []
+
+  const mappedRoles =
+    userDetails.roles.length > 0 ? userDetails.roles.join(', ') : '-'
+  const hasAdminRole = userDetails.roles
+    .map(role => role.toLowerCase())
+    .includes('admin')
+
+  const data = [
+    { key: 'Username', value: userDetails.username },
+    { key: 'Roles', value: mappedRoles }
+  ]
+
+  if (!hasAdminRole) return data
+
+  return [
+    ...data,
+    { key: 'Admin', value: <DispatchLink>:server user list</DispatchLink> },
+    { key: '', value: <DispatchLink>:server user add</DispatchLink> }
+  ]
 }
