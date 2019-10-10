@@ -38,7 +38,6 @@ import {
   getConnectionState,
   CONNECTED_STATE
 } from 'shared/modules/connections/connectionsDuck'
-import { ConfirmationButton } from 'browser-components/buttons/ConfirmationButton'
 import {
   StyledTh,
   StyledHeaderRow,
@@ -59,8 +58,11 @@ import { RefreshIcon } from 'browser-components/icons/Icons'
 import Render from 'browser-components/Render'
 import FrameError from '../../Frame/FrameError'
 import { NEO4J_BROWSER_USER_ACTION_QUERY } from 'services/bolt/txMetadata'
+
 import { getDefaultBoltScheme } from 'shared/modules/features/versionedFeatures'
 import { getVersion } from 'shared/modules/dbMeta/dbMetaDuck'
+
+import RelatableQueries from './relatable-queries'
 
 export class QueriesFrame extends Component {
   state = {
@@ -215,51 +217,6 @@ export class QueriesFrame extends Component {
       ['Elapsed time', '95px'],
       ['Kill', '95px']
     ]
-    const tableRows = queries.map((query, i) => {
-      return (
-        <tr key={`rows${i}`}>
-          <StyledTd
-            key='host'
-            title={query.host}
-            width={tableHeaderSizes[0][1]}
-          >
-            <Code>{query.host}</Code>
-          </StyledTd>
-          <StyledTd key='username' width={tableHeaderSizes[1][1]}>
-            {query.username}
-          </StyledTd>
-          <StyledTd
-            key='query'
-            title={query.query}
-            width={tableHeaderSizes[2][1]}
-          >
-            <Code>{query.query}</Code>
-          </StyledTd>
-          <StyledTd key='params' width={tableHeaderSizes[3][1]}>
-            <Code>{JSON.stringify(query.parameters, null, 2)}</Code>
-          </StyledTd>
-          <StyledTd
-            key='meta'
-            title={JSON.stringify(query.metaData, null, 2)}
-            width={tableHeaderSizes[4][1]}
-          >
-            <Code>{JSON.stringify(query.metaData, null, 2)}</Code>
-          </StyledTd>
-          <StyledTd key='time' width={tableHeaderSizes[5][1]}>
-            {query.elapsedTimeMillis} ms
-          </StyledTd>
-          <StyledTd key='actions' width={tableHeaderSizes[6][1]}>
-            <ConfirmationButton
-              onConfirmed={this.onCancelQuery.bind(
-                this,
-                query.host,
-                query.queryId
-              )}
-            />
-          </StyledTd>
-        </tr>
-      )
-    })
 
     const errorRows = errors.map((error, i) => (
       <tr key={`error${i}`}>
@@ -276,16 +233,15 @@ export class QueriesFrame extends Component {
         </StyledTh>
       )
     })
+
     return (
       <StyledTableWrapper>
+        <RelatableQueries queries={queries} onCancelQuery={console.log} />
         <StyledTable>
           <thead>
             <StyledHeaderRow>{tableHeaders}</StyledHeaderRow>
           </thead>
-          <tbody>
-            {tableRows}
-            {errorRows}
-          </tbody>
+          <tbody>{errorRows}</tbody>
         </StyledTable>
       </StyledTableWrapper>
     )
