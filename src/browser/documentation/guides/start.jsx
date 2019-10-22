@@ -148,7 +148,7 @@ const content = (
             </svg>
           </div>
           <ul className='topic-bullets'>
-            <li>Disk utilization</li>
+            <li>Disk utilizationasasdsasd</li>
             <li>Cache activity</li>
             <li>Cluster health and status</li>
           </ul>
