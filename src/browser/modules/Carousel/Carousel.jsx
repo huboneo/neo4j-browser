@@ -45,6 +45,10 @@ export default class Carousel extends Component {
     super(props)
     this.slides = this.props.slides || []
     this.myRef = React.createRef()
+
+    if (props.initialSlide && props.initialSlide <= this.slides.length) {
+      this.state.visibleSlide = props.initialSlide - 1
+    }
   }
   onKeyDown (ev) {
     if (ev.keyCode === 37 && this.state.visibleSlide !== 0) {
@@ -89,8 +93,7 @@ export default class Carousel extends Component {
           <SlidePreviousIcon />
         </CarouselButton>
         <StyledCarouselButtonContainer>
-          {showIntro &&
-            !this.state.wasClicked && (
+          {showIntro && !this.state.wasClicked && (
             <StyledCarouselIntroAnimated className='carousel-intro-animation'>
               <StyledCarouselIntro>
                 <span>Use the navigation to get started</span>

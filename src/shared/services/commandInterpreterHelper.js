@@ -73,6 +73,7 @@ import {
   getUserDirectTxMetadata,
   getBackgroundTxMetadata
 } from 'shared/services/bolt/txMetadata'
+import { tryGetRemoteSlideIndexFromUrl } from './commandUtils'
 
 const availableCommands = [
   {
@@ -228,7 +229,14 @@ const availableCommands = [
       const whitelist = getRemoteContentHostnameWhitelist(store.getState())
       fetchRemoteGuide(url, whitelist)
         .then(r => {
-          put(frames.add({ ...action, type: 'play-remote', result: r }))
+          put(
+            frames.add({
+              ...action,
+              type: 'play-remote',
+              slideIndex: tryGetRemoteSlideIndexFromUrl(url),
+              result: r
+            })
+          )
         })
         .catch(e => {
           put(
@@ -236,6 +244,7 @@ const availableCommands = [
               ...action,
               type: 'play-remote',
               response: e.response || null,
+              slideIndex: tryGetRemoteSlideIndexFromUrl(url),
               error: CouldNotFetchRemoteGuideError({
                 error: e.name + ': ' + e.message
               })
